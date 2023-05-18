@@ -18,9 +18,9 @@ class PtyModel:
         rnd = np.random.RandomState()
 
         # Initialize the w → [input_dim, hidden_dim]
-        self.w = rnd.uniform(0, 1, (self.num_input_dim, self.num_hidden_dim))
+        self.w = rnd.uniform(-1, 1, (self.num_input_dim, self.num_hidden_dim))
         # Initialize the bias → [hidden_dim]
-        self.bias = np.array([rnd.uniform(0, 0.4) for _ in range(num_hidden_dim)], dtype=float)
+        self.bias = np.array([rnd.uniform(-0.4, 0.4) for _ in range(num_hidden_dim)], dtype=float)
         # Initialize the beta → [hidden_dim, output_dim]
         self.beta = np.zeros([self.num_hidden_dim, self.num_output_dim], dtype=float)
         # Initialize the gamma → [hidden_dim, output_dim]

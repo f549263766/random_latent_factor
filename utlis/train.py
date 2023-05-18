@@ -8,7 +8,7 @@ from module.model.elm import Elm
 from module.model.rlfn import Rlfn
 from module.model.pyt_model import PtyModel
 from module.datasets.test_regression import RegressionDataset
-from module.datasets.pty3_ratings import Pty3Rating, Pty3RatingConfidence
+from module.datasets.pty3_ratings import Pty3Rating
 from module.builder import worker_init_fn
 
 
@@ -18,13 +18,13 @@ def command_line():
     parser.add_argument("-m", "--model", type=str, default="elm",
                         help="Select the model for training with random learning method."
                              "Default to elm, and optional are elm.")
-    parser.add_argument("-lb", "--hidden_dim_lb", type=int, default=2,
+    parser.add_argument("-lb", "--hidden_dim_lb", type=int, default=5,
                         help="The minimum number of neurons in the hidden layer of SLFN."
                              "Default to 5.")
-    parser.add_argument("-ub", "--hidden_dim_ub", type=int, default=20,
+    parser.add_argument("-ub", "--hidden_dim_ub", type=int, default=50,
                         help="The maximum number of neurons in the hidden layer of SLFN."
                              "Default to 100.")
-    parser.add_argument("-interval", "--incremental_interval", type=int, default=1,
+    parser.add_argument("-interval", "--incremental_interval", type=int, default=5,
                         help="Incremental interval of the number of neurons in the hidden layer."
                              "Default to 1.")
     parser.add_argument("-d", "--dataset", type=str, default="RegressionDataset",
@@ -40,11 +40,7 @@ def command_line():
 def train(cfg):
     # data_set = RegressionDataset()
     data_set = Pty3Rating()
-    x_train, y_train = data_set.x, data_set.y
-    data_set_trust = Pty3RatingConfidence()
-    x_train_co, y_train_co = data_set_trust.x, data_set_trust.y
-    assert (x_train.shape == x_train_co.shape) and (y_train.shape == y_train_co.shape), \
-        f"Difference of dim, {(x_train.shape, y_train.shape)} and {(x_train_co.shape, y_train_co.shape)}"
+    x_train, y_train, x_trust_train, y_trust_train = data_set.x, data_set.y, data_set.x_trust, data_set.y_trust
 
     # plt.plot(x_train, y_train, 'or')
 
@@ -60,7 +56,7 @@ def train(cfg):
                         num_output_dim=y_train.shape[1])
 
         # _ = slfn.fix(x_train, y_train)
-        _ = slfn.fix(x_train, y_train, x_train_co, y_train_co)
+        _ = slfn.fix(x_train, y_train, x_trust_train, y_trust_train)
         predict = slfn(x_train)
         rmse = metrics.mean_squared_error(y_train, predict) ** 0.5
         print(f"number of layer {num_hidden_dim}, rmse: {rmse}")

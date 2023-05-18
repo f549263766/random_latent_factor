@@ -1,82 +1,82 @@
 import pandas as pd
 import os
+import numpy as np
 
 
 class Pty3Rating:
 
-    def __init__(self, data_path="D:/QYZ/Code/random_latent_factor/dataset/D3-ratings.xlsx"):
-        self.data_path = data_path
-        self.root_path = os.path.dirname(data_path)
-        self.x, self.y = None, None
+    def __init__(self,
+                 rating_path="D:/QYZ/Code/random_latent_factor/dataset/D3-ratings.xlsx",
+                 trust_path="D:/QYZ/Code/random_latent_factor/dataset/data3trust.xlsx"):
+        self.rating_path = rating_path
+        self.trust_path = trust_path
+        self.root_path = os.path.dirname(rating_path)
+        self.x, self.y, self.x_trust, self.y_trust = None, None, None, None
         self.processing()
 
     def download(self):
-        if os.path.exists(os.path.join(self.root_path, "pty3ratings.xlsx")):
-            dataset = pd.read_excel(os.path.join(self.root_path, "pty3ratings.xlsx"), sheet_name="Sheet1")
-            self.x = dataset.iloc[:, 0:2].to_numpy()
-            self.y = dataset.iloc[:, 2].to_numpy().reshape(-1, 1)
+        rating_file = os.path.join(self.root_path, "pty3ratings.xlsx")
+        trust_file = os.path.join(self.root_path, "pty3trust.xlsx")
+        if os.path.exists(rating_file) and os.path.exists(trust_file):
+            dataset = pd.read_excel(rating_file, sheet_name="Sheet1", header=None)
+            self.x = dataset.iloc[:, :].to_numpy()
+            self.y = dataset.iloc[:, :].to_numpy()
+            dataset = pd.read_excel(trust_file, sheet_name="Sheet1", header=None)
+            self.x_trust = dataset.iloc[:, :].to_numpy()
+            self.y_trust = dataset.iloc[:, :].to_numpy()
 
             return True
 
         return False
 
-    def processing(self):
-        if not self.download():
-            print('during processing...')
-            # pre-processing dataset
-            dataset = pd.read_excel(self.data_path, sheet_name="user-item-ratings")
-            index = dataset[dataset['user'] == 601].index.tolist()[0]
-            dataset = dataset.iloc[:index, :]
-            dataset = dataset.drop(index=dataset[dataset['movie'] > 600].index)
-            # generate new table
-            output_pd = pd.DataFrame(data=0,
-                                     columns=[i for i in range(600)],
-                                     index=[i for i in range(600)],
-                                     dtype=float)
-            for _, row in dataset.iterrows():
-                idx_x, idx_y, score = int(row[0]), int(row[1]), float(row[2])
-                output_pd.loc[idx_x - 1][idx_y - 1] = score
-            output_pd.to_excel(os.path.join(self.root_path, "pty3ratings.xlsx"), index=False, header=False)
+    def processing_ratings(self):
+        print('during processing data rating...')
+        # pre-processing ratings dataset
+        dataset = pd.read_excel(self.rating_path, sheet_name="user-item-ratings")
+        dataset = dataset.drop(dataset[dataset['movie'] > 1508].index, axis=0)
+        output_pd = pd.pivot_table(dataset[['user', 'movie', 'ratings']],
+                                   columns=['movie'],
+                                   index=['user'],
+                                   values="ratings",
+                                   fill_value=0)
+        output_pd = output_pd.combine_first(pd.DataFrame(
+            data=0,
+            dtype=float,
+            columns=output_pd.columns.tolist(),
+            index=[i for i in range(1, output_pd.shape[1] + 1)]
+        ))
+        drop_row = (output_pd != 0).astype(int).sum(axis=1)
+        drop_row = list(drop_row[drop_row <= 30].index)
+        drop_col = (output_pd != 0).astype(int).sum(axis=0)
+        drop_col = list(drop_col[drop_col <= 4].index)
+        output_pd = output_pd.drop(drop_row, axis=0)
+        output_pd = output_pd.drop(drop_col, axis=1)
+        num_row, num_col = output_pd.shape
+        output_append = pd.DataFrame(data=[[0] * (num_row - num_col)] * num_row,
+                                     index=output_pd.index,
+                                     columns=[i for i in range(output_pd.columns[-1] + 1,
+                                                               output_pd.columns[-1] + 1 + (num_row - num_col))])
+        output_pd = pd.concat([output_pd, output_append], axis=1)
+        output_pd.to_excel(os.path.join(self.root_path, "pty3ratings.xlsx"), index=False, header=False)
+        self.x = output_pd.iloc[:, :].to_numpy()
+        self.y = output_pd.iloc[:, :].to_numpy()
 
-            self.x = output_pd.iloc[:, 0:2].to_numpy()
-            self.y = output_pd.iloc[:, 2].to_numpy().reshape(-1, 1)
+        return drop_row
 
-    def __getitem__(self, index):
-        return self.x[index], self.y[index]
-
-    def __len__(self):
-        return len(self.x)
-
-
-class Pty3RatingConfidence:
-
-    def __init__(self, data_path="D:/QYZ/Code/random_latent_factor/dataset/data3trust.xlsx"):
-        self.data_path = data_path
-        self.root_path = os.path.dirname(data_path)
-        self.x, self.y = None, None
-        self.processing()
-
-    def download(self):
-        if os.path.exists(os.path.join(self.root_path, "pty3trust.xlsx")):
-            dataset = pd.read_excel(os.path.join(self.root_path, "pty3trust.xlsx"), sheet_name="Sheet1")
-            self.x = dataset.iloc[:, 0:2].to_numpy()
-            self.y = dataset.iloc[:, 2].to_numpy().reshape(-1, 1)
-
-            return True
-
-        return False
+    def processing_trust(self, rows):
+        print('during processing trust dataset...')
+        rows = (np.array(rows) - 1).tolist()
+        dataset = pd.read_excel(self.trust_path, sheet_name="sheet1", header=None)
+        dataset = dataset.drop(rows, axis=0)
+        dataset = dataset.drop(rows, axis=1)
+        dataset.to_excel(os.path.join(self.root_path, "pty3trust.xlsx"), index=False, header=False)
+        self.x_trust = dataset.iloc[:, :].to_numpy()
+        self.y_trust = dataset.iloc[:, :].to_numpy()
 
     def processing(self):
         if not self.download():
-            print('during processing...')
-            dataset = pd.read_excel(self.data_path, sheet_name="sheet1", header=None)
-            col = 600 if len(dataset.columns) > 600 else len(dataset.columns)
-            data_set = [[i, j, dataset.iloc[i - 1, j - 1]]
-                        for i in range(1, col + 1) for j in range(1, col + 1)]
-            df = pd.DataFrame(data_set, columns=['user1', 'user2', 'trust'])
-            df.to_excel(os.path.join(self.root_path, "pty3trust.xlsx"), index=False)
-            self.x = df.iloc[:, 0:2].to_numpy()
-            self.y = df.iloc[:, 2].to_numpy().reshape(-1, 1)
+            drop_rows_list = self.processing_ratings()
+            self.processing_trust(drop_rows_list)
 
     def __getitem__(self, index):
         return self.x[index], self.y[index]
@@ -89,7 +89,5 @@ if __name__ == '__main__':
     pty = Pty3Rating()
     print(pty.x.shape)
     print(pty.y.shape)
-
-    pty2 = Pty3RatingConfidence()
-    print(pty2.x.shape)
-    print(pty2.y.shape)
+    print(pty.x_trust.shape)
+    print(pty.y_trust.shape)
