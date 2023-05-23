@@ -9,7 +9,6 @@ from module.model.rlfn import Rlfn
 from module.model.pyt_model import PtyModel
 from module.datasets.test_regression import RegressionDataset
 from module.datasets.pty3_ratings import Pty3Rating
-from module.builder import worker_init_fn
 
 
 def command_line():
