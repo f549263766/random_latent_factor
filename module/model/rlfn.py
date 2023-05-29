@@ -29,18 +29,9 @@ class Rlfn:
     def fix(self, x, y):
         # beta-step
         h_matrix = np.asarray(self.activation(np.dot(x, self.w) + self.bias))
-        h_matrix_inverse = np.linalg.inv(1e-5 + np.dot(h_matrix.T, h_matrix))
-        h_matrix_output = np.dot(h_matrix.T, y)
-        self.beta = np.dot(h_matrix_inverse, h_matrix_output)
+        self.beta = np.dot(np.dot(np.linalg.inv(np.dot(h_matrix.T, h_matrix) + np.asarray(1e-5)), h_matrix.T), y)
         # h-step
-        h_part1 = np.dot(y, self.beta.T)
-        h_part2 = np.asarray(1e-5)
-        h_part3 = h_part2 + np.dot(self.beta, self.beta.T)
-        try:
-            h_part4 = np.linalg.inv(h_part3)
-        except np.linalg.LinAlgError:
-            h_part4 = np.linalg.pinv(h_part3)
-        self.h = np.dot(h_part1, h_part4)
+        self.h = np.dot(np.dot(x, self.beta.T), np.linalg.inv(np.dot(self.beta, self.beta.T) + np.asarray(1e-5)))
 
         return self.h, self.beta
 

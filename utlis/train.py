@@ -1,5 +1,6 @@
 import argparse
 import os
+import numpy as np
 import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
@@ -9,6 +10,7 @@ from module.model.rlfn import Rlfn
 from module.model.pyt_model import PtyModel
 from module.datasets.test_regression import RegressionDataset
 from module.datasets.pty3_ratings import Pty3Rating
+from utlis.logger import get_root_logger
 
 
 def command_line():
@@ -20,7 +22,7 @@ def command_line():
     parser.add_argument("-lb", "--hidden_dim_lb", type=int, default=5,
                         help="The minimum number of neurons in the hidden layer of SLFN."
                              "Default to 5.")
-    parser.add_argument("-ub", "--hidden_dim_ub", type=int, default=50,
+    parser.add_argument("-ub", "--hidden_dim_ub", type=int, default=100,
                         help="The maximum number of neurons in the hidden layer of SLFN."
                              "Default to 100.")
     parser.add_argument("-interval", "--incremental_interval", type=int, default=5,
@@ -38,26 +40,32 @@ def command_line():
 
 def train(cfg):
     # data_set = RegressionDataset()
-    data_set = Pty3Rating()
-    x_train, y_train, x_trust_train, y_trust_train = data_set.x, data_set.y, data_set.x_trust, data_set.y_trust
+    data_set = Pty3Rating(user_rating_data_path="D:/QYZ/Code/random_latent_factor/dataset/D3-ratings.xlsx",
+                          user_trust_data_path="D:/QYZ/Code/random_latent_factor/dataset/data3trust.xlsx",
+                          logger=logger)
+    x, y, x_trust, y_trust, x_mistrust, y_mistrust = data_set.x, data_set.y, data_set.x_trust, data_set.y_trust, \
+                                                     data_set.x_mistrust, data_set.y_mistrust
 
     # plt.plot(x_train, y_train, 'or')
 
     for num_hidden_dim in range(cfg.hidden_dim_lb, cfg.hidden_dim_ub, cfg.incremental_interval):
-        # slfn = Elm(num_input_dim=x_train.shape[1],
-        #            num_hidden_dim=num_hidden_dim,
-        #            num_output_dim=y_train.shape[1])
-        # slfn = Rlfn(num_input_dim=x_train.shape[1],
-        #             num_hidden_dim=num_hidden_dim,
-        #             num_output_dim=y_train.shape[1])
-        slfn = PtyModel(num_input_dim=x_train.shape[1],
-                        num_hidden_dim=num_hidden_dim,
-                        num_output_dim=y_train.shape[1])
+        try:
+            # slfn = Elm(num_input_dim=x.shape[1],
+            #            num_hidden_dim=num_hidden_dim,
+            #            num_output_dim=y.shape[1])
+            # slfn = Rlfn(num_input_dim=x.shape[1],
+            #             num_hidden_dim=num_hidden_dim,
+            #             num_output_dim=y.shape[1])
+            slfn = PtyModel(num_input_dim=x.shape[1],
+                            num_hidden_dim=num_hidden_dim,
+                            num_output_dim=y.shape[1])
 
-        # _ = slfn.fix(x_train, y_train)
-        _ = slfn.fix(x_train, y_train, x_trust_train, y_trust_train)
-        predict = slfn(x_train)
-        rmse = metrics.mean_squared_error(y_train, predict) ** 0.5
+            # _ = slfn.fix(x, y)
+            _ = slfn.fix(x, y, x_trust, y_trust, x_mistrust, y_mistrust)
+        except np.linalg.LinAlgError:
+            continue
+        predict = slfn(x)
+        rmse = metrics.mean_squared_error(y, predict) ** 0.5
         print(f"number of layer {num_hidden_dim}, rmse: {rmse}")
 
     #     plt.plot(x_train, predict)
@@ -69,4 +77,5 @@ def train(cfg):
 
 if __name__ == '__main__':
     args = command_line()
+    logger = get_root_logger()
     train(args)
