@@ -25,10 +25,8 @@ class Elm:
 
     def fix(self, x, y):
         h_matrix = np.asarray(self.activation(np.dot(x, self.w) + self.bias))
-        # h_matrix_inverse = np.linalg.pinv(h_matrix)
-        # h_matrix_inverse = np.dot((h_matrix.H * h_matrix + len(y) / self.c).I, h_matrix.H)
-        h_matrix_inverse = np.dot(np.linalg.inv((
-                np.dot(h_matrix.T, h_matrix) + np.asarray(1e-5))), h_matrix.T)
+        h_matrix_inverse = np.dot(np.linalg.inv(
+                np.dot(h_matrix.T, h_matrix) + np.asarray(2e9)), h_matrix.T)
         self.beta = np.dot(h_matrix_inverse, y)
 
         return self.beta

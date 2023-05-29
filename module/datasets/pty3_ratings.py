@@ -11,15 +11,17 @@ class Pty3Rating:
 
     def __init__(self,
                  user_rating_data_path="D:/QYZ/Code/random_latent_factor/dataset/D3-ratings.xlsx",
-                 user_trust_data_path="D:/QYZ/Code/random_latent_factor/dataset/data3trust.xlsx"):
+                 user_trust_data_path="D:/QYZ/Code/random_latent_factor/dataset/data3trust.xlsx",
+                 logger=get_root_logger()):
         self.user_rating_data_path = user_rating_data_path
         self.user_trust_data_path = user_trust_data_path
         self.root_path = os.path.dirname(user_rating_data_path)
+        self.logger = logger
         self.x, self.y, self.x_trust, self.y_trust, self.x_mistrust, self.y_mistrust = [None] * 6
         self.processing()
 
     def download(self):
-        logger.info("Loading processed and saved dataset..")
+        self.logger.info("Loading processed and saved dataset..")
         # Set the saved file path
         rating_file = os.path.join(self.root_path, "pty3ratings.xlsx")
         trust_file = os.path.join(self.root_path, "pty3trust.xlsx")
@@ -41,7 +43,7 @@ class Pty3Rating:
         return False
 
     def processing_ratings(self):
-        logger.info("During processing user ratings dataset..")
+        self.logger.info("During processing user ratings dataset..")
         # pre-processing user ratings dataset
         user_ratings_dataset = pd.read_excel(self.user_rating_data_path, sheet_name="user-item-ratings")
         # Only 1508 items remain rated
@@ -85,7 +87,7 @@ class Pty3Rating:
         return drop_row_index_list
 
     def processing_trust(self, drop_row_index_list):
-        logger.info("During processing user trust dataset..")
+        self.logger.info("During processing user trust dataset..")
         # Update the discard index list
         drop_row_index_list = (np.array(drop_row_index_list) - 1).tolist()
         # pre-processing user trust dataset
@@ -101,7 +103,7 @@ class Pty3Rating:
         return user_trust_dataset
 
     def processing_mistrust(self, user_trust_dataset):
-        logger.info("During processing user mistrust dataset..")
+        self.logger.info("During processing user mistrust dataset..")
         # Update user mistrust dataset
         user_mistrust_dataset = (user_trust_dataset - 1) * -1
         # Export data to excel sheet
@@ -124,7 +126,6 @@ class Pty3Rating:
 
 
 if __name__ == '__main__':
-    logger = get_root_logger()
     pty = Pty3Rating()
     print(pty.x.shape)
     print(pty.y.shape)
