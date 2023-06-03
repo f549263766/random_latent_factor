@@ -1,5 +1,5 @@
 import numpy as np
-from module.activation.sigmoid import sigmoid
+from module.activation.activation_select import ActivationSelect
 
 
 class PtyModelWithoutMistrust:
@@ -9,14 +9,17 @@ class PtyModelWithoutMistrust:
                  num_hidden_dim,
                  num_output_dim,
                  activation='sigmoid',
-                 regularization_factor_c=10):
+                 regularization_factor_c=2e-5,
+                 regulating_factors_alpha=0.5):
         self.num_input_dim = num_input_dim
         self.num_hidden_dim = num_hidden_dim
         self.num_output_dim = num_output_dim
         self.c = regularization_factor_c
-        self.activation = sigmoid
-        rnd = np.random.RandomState()
+        activation_select = ActivationSelect(activation)
+        self.activation = getattr(activation_select, f"{activation}_function")()
+        self.alpha = regulating_factors_alpha
 
+        rnd = np.random.RandomState()
         # Initialize the w → [input_dim, hidden_dim]
         self.w = rnd.uniform(-2, 2, (self.num_input_dim, self.num_hidden_dim))
         # Initialize the bias → [hidden_dim]
@@ -33,14 +36,14 @@ class PtyModelWithoutMistrust:
     def fix(self, x, y, x_co, y_co, *args):
         # beta-step
         h_matrix = np.asarray(self.activation(np.dot(x, self.w) + self.bias))
-        h_matrix_inverse = np.dot(np.linalg.inv(np.dot(h_matrix.T, h_matrix) + np.asarray(1e-5)), h_matrix.T)
+        h_matrix_inverse = np.dot(np.linalg.inv(np.dot(h_matrix.T, h_matrix) + np.asarray(self.c)), h_matrix.T)
         self.beta = np.dot(h_matrix_inverse, y)
         # gamma-step
         self.gamma = np.dot(h_matrix_inverse, y_co)
         # h-step
         self.h = np.dot((np.dot(x, self.beta.T) + np.dot(x_co, self.gamma.T)),
                         np.linalg.inv(np.dot(self.beta, self.beta.T) + np.dot(self.gamma, self.gamma.T)
-                                      + np.asarray(1e-5)))
+                                      + np.asarray(self.c)))
 
         return self.h, self.beta, self.gamma
 
