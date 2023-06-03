@@ -2,7 +2,7 @@ import numpy as np
 from module.activation.sigmoid import sigmoid
 
 
-class PtyModel:
+class PtyModelWithoutMistrust:
 
     def __init__(self,
                  num_input_dim,
@@ -30,20 +30,17 @@ class PtyModel:
         # Initialize the hidden output
         self.h = None
 
-    def fix(self, x, y, x_co, y_co, x_mistrust, y_mistrust, *args):
+    def fix(self, x, y, x_co, y_co, *args):
         # beta-step
         h_matrix = np.asarray(self.activation(np.dot(x, self.w) + self.bias))
         h_matrix_inverse = np.dot(np.linalg.inv(np.dot(h_matrix.T, h_matrix) + np.asarray(1e-5)), h_matrix.T)
         self.beta = np.dot(h_matrix_inverse, y)
         # gamma-step
         self.gamma = np.dot(h_matrix_inverse, y_co)
-        # mu-step
-        self.mu = np.dot(h_matrix_inverse, y_mistrust)
         # h-step
-        self.h = np.dot(
-            (np.dot(x, self.beta.T) + 0.5 * np.dot(x_co, self.gamma.T) - 0.5 * np.dot(x_mistrust, self.mu.T)),
-            np.linalg.inv(np.dot(self.beta, self.beta.T) + 0.5 * np.dot(self.gamma, self.gamma.T) -
-                          0.5 * np.dot(self.mu, self.mu.T) + np.asarray(1e-3)))
+        self.h = np.dot((np.dot(x, self.beta.T) + np.dot(x_co, self.gamma.T)),
+                        np.linalg.inv(np.dot(self.beta, self.beta.T) + np.dot(self.gamma, self.gamma.T)
+                                      + np.asarray(1e-5)))
 
         return self.h, self.beta, self.gamma
 

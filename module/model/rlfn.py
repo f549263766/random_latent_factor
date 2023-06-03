@@ -26,7 +26,7 @@ class Rlfn:
         # Initialize the hidden output
         self.h = None
 
-    def fix(self, x, y):
+    def fix(self, x, y, *args):
         # beta-step
         h_matrix = np.asarray(self.activation(np.dot(x, self.w) + self.bias))
         self.beta = np.dot(np.dot(np.linalg.inv(np.dot(h_matrix.T, h_matrix) + np.asarray(1e-5)), h_matrix.T), y)
