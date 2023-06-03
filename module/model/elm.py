@@ -23,7 +23,7 @@ class Elm:
         # Initialize the beta → [hidden_dim, output_dim]
         self.beta = np.zeros([self.num_hidden_dim, self.num_output_dim], dtype=float)
 
-    def fix(self, x, y):
+    def fix(self, x, y, *args):
         h_matrix = np.asarray(self.activation(np.dot(x, self.w) + self.bias))
         h_matrix_inverse = np.dot(np.linalg.inv(
                 np.dot(h_matrix.T, h_matrix) + np.asarray(2e9)), h_matrix.T)
