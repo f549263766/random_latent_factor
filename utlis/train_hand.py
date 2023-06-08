@@ -94,56 +94,28 @@ def train(cfg, items):
             items['hidden'] = num_hidden_dim
             items['rmse'], items['mae'] = rmse, mae
 
-    logger.info("save result with to D:/QYZ/Code/random_latent_factor/output\n")
-    if len(result_list) >= 2:
-        save_result_with_excel(
-            result_list,
-            f"{args.model}_c_{args.regularization_factor_c}_alpha_{args.regulating_factors_alpha}_{timestamp}.xlsx",
-            f"D:/QYZ/Code/random_latent_factor/output/excel/{args.model}/{args.dataset}/"
-            f"alpha_{args.regulating_factors_alpha}")
-
 
 def main():
     # record iteration time
     tic = time.time()
-    # select dataset
-    for dataset in ["d1", "d2", "d3", "d4", "d5", "d6"]:
-        logger.info(f"Start {args.model} model training in {args.dataset} dataset...")
-        # setup alpha range
-        for alpha in np.arange(0, 1.1, 0.1):
-            alpha = 0.5 if args.model in ["elm", "rlfn"] else alpha
-            # reset the parameter indicators
-            best_result_items = {
-                'alpha': alpha,
-                'factor': None,
-                'hidden': None,
-                'rmse': None,
-                'mae': None
-            }
-            # setup regularization factor range
-            for rfc in np.logspace(-10, 10, base=2., num=21):
-                rfc = 1e-5 if args.model in ["elm", "rlfn"] else rfc
-                # reset hyper configs
-                args.regularization_factor_c = 2 * rfc
-                args.regulating_factors_alpha = round(alpha, 2)
-                args.dataset = dataset
-                # train model
-                train(args, best_result_items)
-                # elm and rlfn just one train
-                if args.model in ["elm", "rlfn"]:
-                    break
-
-            logger.info(f"the best performance with {best_result_items['hidden']} hidden dim, "
-                        f"regular factor {best_result_items['factor']} and alpha {alpha} of model, "
-                        f"rmse: {best_result_items['rmse']}, mae: {best_result_items['mae']}")
-            save_best_result(best_result_items,
-                             f"best_{args.model}_result_{timestamp}.xlsx",
-                             f"D:/QYZ/Code/random_latent_factor/output/excel/{args.model}/{args.dataset}/"
-                             f"alpha_{args.regulating_factors_alpha}")
-            if args.model in ["elm", "rlfn"]:
-                break
-        # show cost time of one iteration
-        logger.info(f"Time cost in a dataset is :{time.time() - tic}\n")
+    logger.info(f"Start {args.model} model training in {args.dataset} dataset...")
+    # reset the parameter indicators
+    best_result_items = {
+        'alpha': 0.5,
+        'factor': None,
+        'hidden': None,
+        'rmse': None,
+        'mae': None
+    }
+    # reset hyper configs
+    args.regularization_factor_c = 0.03125
+    args.regulating_factors_alpha = round(0.5, 2)
+    args.dataset = "d1"
+    # train model
+    train(args, best_result_items)
+    logger.info(f"the best performance with {best_result_items['hidden']} hidden dim, "
+                f"regular factor {best_result_items['factor']} and alpha {0.5} of model, "
+                f"rmse: {best_result_items['rmse']}, mae: {best_result_items['mae']}")
 
 
 if __name__ == '__main__':
