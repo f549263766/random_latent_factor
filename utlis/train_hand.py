@@ -96,8 +96,6 @@ def train(cfg, items):
 
 
 def main():
-    # record iteration time
-    tic = time.time()
     logger.info(f"Start {args.model} model training in {args.dataset} dataset...")
     # reset the parameter indicators
     best_result_items = {
@@ -108,7 +106,7 @@ def main():
         'mae': None
     }
     # reset hyper configs
-    args.regularization_factor_c = 0.03125
+    args.regularization_factor_c = 0.03125 / 8
     args.regulating_factors_alpha = round(0.5, 2)
     args.dataset = "d1"
     # train model
