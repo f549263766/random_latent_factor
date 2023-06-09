@@ -39,3 +39,17 @@ def save_best_result(data_item,
     df.to_excel(osp.join(save_root_path, file_name), index=False)
 
 
+def outliers_replaced_with_mean_values(data_list):
+    assert isinstance(data_list, list), "Must be a list"
+    assert len(np.array(data_list).shape) == 1, "Must be a 1D-array"
+
+    data_array = np.asarray(data_list, dtype=float)
+    data_mean = np.mean(data_array, axis=0)
+    data_std = np.std(data_array, axis=0)
+
+    floor = data_mean - 3 * data_std
+    upper = data_mean + 3 * data_std
+
+    output_list = [float(np.where(((val < floor) | (val > upper)), data_mean, val)) for val in data_array]
+
+    return output_list

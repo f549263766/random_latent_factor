@@ -21,7 +21,7 @@ class PtyModel:
 
         rnd = np.random.RandomState()
         # Initialize the w → [input_dim, hidden_dim]
-        self.w = rnd.uniform(-2, 2, (self.num_input_dim, self.num_hidden_dim))
+        self.w = rnd.uniform(-1, 1, (self.num_input_dim, self.num_hidden_dim))
         # Initialize the bias → [hidden_dim]
         self.bias = np.array([rnd.uniform(-0.2, 0.2) for _ in range(num_hidden_dim)], dtype=float)
         # Initialize the beta → [hidden_dim, output_dim]
@@ -36,7 +36,8 @@ class PtyModel:
     def fix(self, x, y, x_co, y_co, x_mistrust, y_mistrust, *args):
         # beta-step
         h_matrix = np.asarray(self.activation(np.dot(x, self.w) + self.bias))
-        h_matrix_inverse = np.dot(np.linalg.inv(np.dot(h_matrix.T, h_matrix) + np.asarray(self.c)), h_matrix.T)
+        h_matrix_inverse = np.dot(np.linalg.inv(np.dot(h_matrix.T, h_matrix) +
+                                                self.c * np.eye(int(h_matrix.shape[1]))), h_matrix.T)
         self.beta = np.dot(h_matrix_inverse, y)
         # gamma-step
         self.gamma = np.dot(h_matrix_inverse, y_co)

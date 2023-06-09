@@ -31,7 +31,8 @@ class Rlfn:
     def fix(self, x, y, *args):
         # beta-step
         h_matrix = np.asarray(self.activation(np.dot(x, self.w) + self.bias))
-        self.beta = np.dot(np.dot(np.linalg.inv(np.dot(h_matrix.T, h_matrix) + np.asarray(self.c)), h_matrix.T), y)
+        self.beta = np.dot(np.dot(np.linalg.inv(np.dot(h_matrix.T, h_matrix) +
+                                                self.c * np.eye(int(h_matrix.shape[1]))), h_matrix.T), y)
         # h-step
         self.h = np.dot(np.dot(x, self.beta.T), np.linalg.inv(np.dot(self.beta, self.beta.T) + np.asarray(self.c)))
 

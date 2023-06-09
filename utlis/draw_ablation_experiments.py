@@ -46,10 +46,10 @@ class DataProcess:
         # create data summary table
         pd_data_summary_table_rmse = pd.DataFrame(columns=data_name_list, index=dim_name_list)
         pd_data_summary_table_mae = pd.DataFrame(columns=data_name_list, index=dim_name_list)
-        # record best rmse and mae
-        best_rmse, best_mae = [None] * 7, [None] * 7
         # traversal sub dirs
         for idx, sub_dir in enumerate(sub_dir_lists):
+            # record best rmse and mae
+            best_rmse, best_mae = [None] * 7, [None] * 7
             # get excel data fro sub dir path
             excel_lists = [osp.join(sub_dir, alpha_dir, excel_data) for alpha_dir in os.listdir(sub_dir)
                            for excel_data in os.listdir(osp.join(sub_dir, alpha_dir))

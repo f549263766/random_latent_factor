@@ -124,7 +124,7 @@ def main():
             for rfc in np.logspace(-10, 10, base=2., num=21):
                 rfc = 1e-5 if args.model in ["elm", "rlfn"] else rfc
                 # reset hyper configs
-                args.regularization_factor_c = 2 * rfc
+                args.regularization_factor_c = rfc
                 args.regulating_factors_alpha = round(alpha, 2)
                 args.dataset = dataset
                 # train model
