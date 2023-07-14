@@ -8,10 +8,11 @@ from utlis.logger import get_root_logger
 from collections import defaultdict
 
 methods_model_dict = {
-    "M1": "NLF", "M2": "ELM", "M3": "RLF", "M4": "STE", "M5": "ENLF", "M6": "ISoRec", "M7": "pty_model"
+    "M1": "NLF", "M2": "RLF", "M3": "STE", "M4": "ENLF", "M5": "ISoRec", "M6": "pty_model"
 }
 model_method_dict = {v: k for k, v in methods_model_dict.items()}
 methods_name_list = [v for _, v in methods_model_dict.items()]
+method_map_model_list = [k for k, _ in methods_model_dict.items()]
 data_name_list = ["D1", "D2", "D3", "D4", "D5", "D6"]
 dim_name_list = ["f=5", "f=20", "f=40", "f=80", "f=120", "f=160", "f=200"]
 plt.rcParams['font.sans-serif'] = ['Times New Roman']
@@ -104,6 +105,38 @@ class DataProcess:
         pd_data_summary_table_mae.to_excel(osp.join(data_root_path, f"{method_name}_mae_summary.xlsx"))
 
 
+def draw_setup(image_ax, config_dict):
+    # set up drawing
+    image_ax.xaxis.set_ticks(config_dict["set_ticks"])
+    image_ax.set_xticklabels(config_dict['set_xticklabels'])
+    image_ax.set_xlabel(config_dict['set_xlabel'], fontsize=12)
+    image_ax.set_ylabel(config_dict['set_ylabel'], fontsize=12)
+    image_ax.legend(loc='upper right', labels=method_map_model_list)
+
+
+def draw_picture(x_label, draw_config_dict, output_fig_path, data_to_method_dict, rmse_or_mae):
+    merge_fig = plt.figure(figsize=(15, 7))
+    # traver rmse data
+    for idx, (data_name, data_list) in enumerate(data_to_method_dict.items()):
+        # draw single picture and merge picture
+        single_fig = plt.figure()
+        single_ax = single_fig.add_subplot(1, 1, 1)
+        merge_ax = merge_fig.add_subplot(2, 3, idx + 1)
+        for i, data_item in enumerate(data_list):
+            # draw each line
+            single_ax.plot(x_label, data_item, markers[i], ms=4, linestyle='-')
+            merge_ax.plot(x_label, data_item, markers[i], ms=4, linestyle='-')
+        # set up drawing
+        draw_setup(single_ax, draw_config_dict)
+        draw_setup(merge_ax, draw_config_dict)
+        merge_ax.set_title(f"({chr(ord('a') + idx)}) {rmse_or_mae} on {data_name}", fontsize=12, y=-0.3)
+        single_fig.show()
+        # save fig
+        single_fig.savefig(f'{osp.join(output_fig_path, f"{rmse_or_mae}_on_{data_name}_inference_f.pdf")}')
+    merge_fig.show()
+    merge_fig.savefig(f'{osp.join(output_fig_path, f"merge_{rmse_or_mae}_inference_f.pdf")}')
+
+
 def draw_ablation_picture():
     # setup root path
     output_fig_path = osp.join(r"D:\QYZ\Code\random_latent_factor\output\figs", "inference_f")
@@ -111,38 +144,19 @@ def draw_ablation_picture():
         os.makedirs(output_fig_path)
 
     # setup x and y label
-    x_label = [20, 40, 60, 80, 120, 160, 200]
-    # traver rmse data
-    for idx, (data_name, data_list) in enumerate(rmse_data_to_method_dict.items()):
-        # draw picture
-        rmse_fig = plt.figure()
-        rmse_ax = rmse_fig.add_subplot(1, 1, 1)
-        for data_item in data_list:
-            # draw each line
-            rmse_ax.plot(x_label, data_item, markers[idx], ms=4, linestyle='-')
-        # set up drawing
-        rmse_ax.xaxis.set_ticks(x_label)
-        rmse_ax.set_xlabel('Value of f', fontsize=18)
-        rmse_ax.set_ylabel('RMSE', fontsize=18)
-        rmse_ax.legend(loc='upper center', labels=methods_name_list)
-        rmse_fig.show()
-        # save fig
-        rmse_fig.savefig(f'{osp.join(output_fig_path, f"RMSE_on_{data_name}_inference_f.pdf")}')
-    # traver mae data
-    for idx, (data_name, data_list) in enumerate(mae_data_to_method_dict.items()):
-        # draw picture
-        mae_fig = plt.figure()
-        mae_ax = mae_fig.add_subplot(1, 1, 1)
-        for data_item in data_list:
-            # draw each line
-            mae_ax.plot(x_label, data_item, markers[idx], ms=4, linestyle='-')
-        mae_ax.xaxis.set_ticks(x_label)
-        mae_ax.set_xlabel('Value of f', fontsize=18)
-        mae_ax.set_ylabel('MAE', fontsize=18)
-        mae_ax.legend(loc='upper center', labels=methods_name_list)
-        mae_fig.show()
-        # save fig
-        mae_fig.savefig(f'{osp.join(output_fig_path, f"MAE_on_{data_name}_inference_f.pdf")}')
+    x_label = np.linspace(0, 210, 7, dtype=np.uint32)
+    # setup draw config
+    draw_config_dict = {
+        "set_ticks": x_label,
+        "set_xticklabels": [20, 40, 60, 80, 120, 160, 200],
+        "set_xlabel": "Value of $f$",
+        "set_ylabel": "RMSE",
+    }
+    # draw rmse picture
+    draw_picture(x_label, draw_config_dict, output_fig_path, rmse_data_to_method_dict, "RMSE")
+    draw_config_dict['set_ylabel'] = 'MAE'
+    # draw mae picture
+    draw_picture(x_label, draw_config_dict, output_fig_path, mae_data_to_method_dict, "MAE")
 
 
 def deal_with_summary_data(root_path):

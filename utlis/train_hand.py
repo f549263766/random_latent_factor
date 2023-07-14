@@ -25,7 +25,7 @@ def command_line():
     parser.add_argument("-interval", "--incremental_interval", type=int, default=5,
                         help="Incremental interval of the number of neurons in the hidden layer."
                              "Default to 1.")
-    parser.add_argument("-d", "--dataset", type=str, default="d1",
+    parser.add_argument("-d", "--dataset", type=str, default="d6",
                         help="Select the data set to be used this time."
                              "Default to d1, and optional are [d1, d2, d3, d4, d5, d6].")
     parser.add_argument("-ac", "--activation", type=str, default="sigmoid",
@@ -62,6 +62,7 @@ def train(cfg, items):
 
     # parameter training
     for num_hidden_dim in range(cfg.hidden_dim_lb, cfg.hidden_dim_ub, cfg.incremental_interval):
+        tic = time.perf_counter()
         try:
             model = ModelSelect(num_input_dim=x.shape[1],
                                 num_hidden_dim=num_hidden_dim,
@@ -76,6 +77,8 @@ def train(cfg, items):
             logger.info(f"{e}")
             continue
 
+        ted = time.perf_counter()
+
         # model predict
         predict = slfn(x)
         # computing error of predict between trust
@@ -83,7 +86,7 @@ def train(cfg, items):
         mae = metrics.mean_absolute_error(y, predict)
         # record the rmse and mae
         result_list.append([num_hidden_dim, rmse, mae])
-        logger.info(f"number of layer {num_hidden_dim}, rmse: {rmse}, mae: {mae}")
+        logger.info(f"number of layer {num_hidden_dim}, rmse: {rmse}, mae: {mae}, cost time: {ted - tic}")
         # update the best performance of model
         if items['hidden'] is not None and items['rmse'] > rmse:
             items['factor'] = args.regularization_factor_c
@@ -106,9 +109,8 @@ def main():
         'mae': None
     }
     # reset hyper configs
-    args.regularization_factor_c = 0.03125 / 8
+    args.regularization_factor_c = 0.001953125
     args.regulating_factors_alpha = round(0.5, 2)
-    args.dataset = "d1"
     # train model
     train(args, best_result_items)
     logger.info(f"the best performance with {best_result_items['hidden']} hidden dim, "

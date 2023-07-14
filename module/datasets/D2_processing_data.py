@@ -136,7 +136,7 @@ class Pty2Rating:
 
 
 if __name__ == '__main__':
-    pty = Pty3Rating()
+    pty = Pty2Rating()
     print(pty.x.shape)
     print(pty.y.shape)
     print(pty.x_trust.shape)
